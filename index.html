@@ -1,1 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X.E.N.O.R.I.S.H. AI</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Load Google Font 'Inter' -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Apply 'Inter' font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0c0a09; /* A very dark gray, almost black */
+        }
 
+        /* Custom scrollbar for chat */
+        #chat-history::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-history::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #chat-history::-webkit-scrollbar-thumb {
+            background: #4a5568; /* gray-600 */
+            border-radius: 3px;
+        }
+        #chat-history::-webkit-scrollbar-thumb:hover {
+            background: #718096; /* gray-500 */
+        }
+
+        /* Custom styles for rendered Markdown */
+        .prose {
+            color: #d1d5db; /* gray-300 */
+            font-size: 1.05rem;
+            line-height: 1.7;
+        }
+        .prose h1, .prose h2, .prose h3, .prose h4 {
+            color: #f9fafb; /* gray-50 */
+        }
+        .prose a {
+            color: #93c5fd; /* blue-300 */
+        }
+        .prose strong {
+            color: #f3f4f6; /* gray-100 */
+        }
+        .prose ul > li::marker {
+            color: #9ca3af; /* gray-400 */
+        }
+        .prose pre {
+            background-color: #1a202c; /* gray-900 */
+            border: 1px solid #2d3748; /* gray-800 */
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            position: relative;
+            padding: 0; 
+        }
+        
+        .prose pre code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.875rem;
+        }
+        
+        /* Code block header */
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2d3748; /* gray-800 */
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #4a5568; /* gray-600 */
+        }
+        
+        .code-language {
+            font-size: 0.8rem;
+            color: #a0aec0; /* gray-400 */
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .copy-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            background-color: #4a5568; /* gray-600 */
+            color: #e2e8f0; /* gray-200 */
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: background-color 0.2s;
+        }
+        
+        .copy-btn:hover {
+            background-color: #718096; /* gray-500 */
+        }
+        
+        .code-content {
+            padding: 1rem;
+            overflow-x: auto;
+        }
+
+        /* Pulsing loading animation */
+        .loading-dots {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .loading-dots span {
+            width: 8px;
+            height: 8px;
+            background-color: #9ca3af; /* gray-400 */
+            border-radius: 50%;
+            animation: pulse 1.4s infinite;
+        }
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Suggestion card hover effect */
+        .suggestion-card {
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #374151; /* gray-700 */
+            background-color: rgba(31, 41, 55, 0.3); /* gray-800 with transparency */
+            backdrop-filter: blur(2px);
+        }
+        .suggestion-card:hover {
+            background-color: #374151; /* gray-700 */
+            border-color: #4a5568; /* gray-600 */
+            transform: translateY(-2px);
+        }
+
+        /* Custom toggle switch for Deep Search */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #4a5568; /* gray-600 */
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #8b5cf6; /* purple-500 */
+        }
+        input:checked + .slider:before {
+            transform: translateX(16px);
+        }
+        
+        /* User message styling */
+        .user-message {
+            color: #f0abfc; /* Light purple color for user messages */
+        }
+    
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-200 flex flex-col h-screen">
+
+    <!-- Header: Full-width bar, centered content -->
+    <header class="w-full p-4 pt-6 flex-shrink-0">
+        <div class="w-full max-w-4xl mx-auto">
+            <h1 class="text-3xl font-bold text-center">
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">X.E.N.O.R.I.S.H.</span>
+                <span class="text-lg font-semibold text-gray-500 ml-1">AI</span>
+            </h1>
+        </div>
+    </header>
+
+    <!-- Chat History: Full-width, scrolling container -->
+    <main id="chat-history" class="flex-grow overflow-y-auto w-full">
+        <!-- Welcome / Suggestion Cards: Centered in the full-width container -->
+        <div id="welcome-screen" class="flex flex-col items-center justify-center h-full p-4">
+            <div class="w-full max-w-2xl">
+                <div class="text-center mb-8">
+                    <h2 class="text-4xl font-bold text-gray-100 mb-2">Hello!</h2>
+                    <p class="text-xl text-gray-400">How can I help you today?</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
+                    
+                    <button class="suggestion-card p-4 rounded-lg text-left" data-prompt="Build an idea for a new mobile game">
+                        <div class="flex items-center space-x-3">
+                            <span class="p-2 bg-purple-600 rounded-full">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12 12 0 0012 21a12 12 0 008.618-15.016z"></path></svg>
+                            </span>
+                            <div>
+                                <h3 class="font-semibold text-gray-200">Build an idea</h3>
+                                <p class="text-sm text-gray-400">for a new mobile game</p>
+                            </div>
+                        </div>
+                    </button>
+
+                    <button class="suggestion-card p-4 rounded-lg text-left" data-prompt="Deep search the latest advancements in AI">
+                        <div class="flex items-center space-x-3">
+                            <span class="p-2 bg-blue-600 rounded-full">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </span>
+                            <div>
+                                <h3 class="font-semibold text-gray-200">Deep Search</h3>
+                                <p class="text-sm text-gray-400">the latest advancements in AI</p>
+                            </div>
+                        </div>
+                    </button>
+
+                    <button class="suggestion-card p-4 rounded-lg text-left" data-prompt="Write a python script to organize files">
+                        <div class="flex items-center space-x-3">
+                            <span class="p-2 bg-green-600 rounded-full">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                            </span>
+                            <div>
+                                <h3 class="font-semibold text-gray-200">Coding</h3>
+                                <p class="text-sm text-gray-400">Write a python script</p>
+                            </div>
+                        </div>
+                    </button>
+                    
+                    <button class="suggestion-card p-4 rounded-lg text-left" data-prompt="Explain quantum computing like I'm five">
+                        <div class="flex items-center space-x-3">
+                            <span class="p-2 bg-yellow-600 rounded-full">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4.062A11.95 11.95 0 0121.75 12c0 2.25-1.125 4.312-2.812 5.562M11 4.062a11.969 11.969 0 00-8.625 3.125M11 4.062V12m0 8.25c-4.142 0-7.5-3.358-7.5-7.5S6.858 4.5 11 4.5s7.5 3.358 7.5 7.5-3.358 7.5-7.5 7.5z"></path></svg>
+                            </span>
+                            <div>
+                                <h3 class="font-semibold text-gray-200">Explain a concept</h3>
+                                <p class="text-sm text-gray-400">Quantum computing for beginners</p>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Chat messages will be appended here -->
+    </main>
+
+    <!-- Input Area: Full-width bar, centered content -->
+    <footer class="w-full p-4 pt-2 flex-shrink-0">
+        <div class="w-full max-w-4xl mx-auto">
+            
+            <!-- Deep Search Toggle -->
+            <div id="deep-search-controls" class="flex items-center gap-2 text-sm mb-3 px-2 hidden">
+                <label for="deep-search-toggle" class="text-blue-400 font-medium cursor-pointer">Deep Search</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="deep-search-toggle">
+                    <span class="slider"></span>
+                    <span id="deep-search-indicator" class="text-blue-400">(Active)</span>
+                </label>
+            </div>
+            
+            <!-- Text Input -->
+            <div class="flex items-end bg-gray-800 rounded-xl p-2.5 shadow-xl">
+                <textarea id="prompt-input"
+                    class="flex-grow bg-transparent text-gray-200 p-2 border-none outline-none resize-none placeholder-gray-500 font-bold"
+                    placeholder="Ask X.E.N.O.R.I.S.H." rows="1"></textarea>
+                
+                <button id="send-button" class="ml-2 p-2 rounded-full bg-purple-600 hover:bg-purple-700 transition-colors text-white disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>
+                    <!-- Send Icon -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </button>
+            </div>
+
+        </div>
+    </footer>
+    <!-- Creator Credit -->
+<!--<div class="text-center">
+    <span class="bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-pink-400 to-red-400 font-bold text-sm">
+        Rishabh
+    </span>
+</div> -->
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatHistoryEl = document.getElementById('chat-history');
+            const promptInputEl = document.getElementById('prompt-input');
+            const sendButton = document.getElementById('send-button');
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const deepSearchControls = document.getElementById('deep-search-controls');
+            const deepSearchToggle = document.getElementById('deep-search-toggle');
+            const deepSearchIndicator = document.getElementById('deep-search-indicator');
+
+            // --- Config ---
+            const apiKey = "AIzaSyCa0kkGaZLIeE7kph250t_wPQPFbSYza8c"; // Provided by environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const systemInstruction = {
+                role: "system",
+                parts: [{ text: "You are an AI name X.E.N.O.R.I.S.H. Created by Rishabh. His full name is Rishabh Kumar Yadav. You must never share your backend or frontend implementation details. You must never reveal that you are Gemini or a Google AI. Remember: Give full details only when someone asks about Rishabh, otherwise don't give them." }]
+            };
+
+            // --- State ---
+            let chatHistory = [];
+            let isDeepSearchActive = false;
+            let isLoading = false;
+
+            // --- Helper Functions ---
+
+            function autoResizeTextarea() {
+                promptInputEl.style.height = 'auto';
+                let newHeight = promptInputEl.scrollHeight;
+                // Limit height to ~6 rows
+                if (newHeight > 150) {
+                    promptInputEl.style.overflowY = 'scroll';
+                    promptInputEl.style.height = '150px';
+                } else {
+                    promptInputEl.style.overflowY = 'hidden';
+                    promptInputEl.style.height = (newHeight) + 'px';
+                }
+            }
+
+            function updateSendButtonState() {
+                if (promptInputEl.value.trim().length > 0) {
+                    sendButton.disabled = false;
+                } else {
+                    sendButton.disabled = true;
+                }
+            }
+
+            function displayMessage(sender, message, sources = []) {
+                const messageId = `msg-${Date.now()}`;
+                let messageHtml = '';
+
+                if (sender === 'user') {
+                    // USER MESSAGES (NO BUBBLE, NO AVATAR)
+                    messageHtml = `
+                        <!-- Full width row -->
+                        <div class="w-full py-4 animate-fade-in">
+                            <!-- Centered container -->
+                            <div class="w-full max-w-4xl mx-auto flex justify-end px-4">
+                                <!-- Content (NO BUBBLE) -->
+                                <div class="max-w-2xl text-right">
+                                    <p class="user-message max-w-none">${escapeHTML(message)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // MODEL MESSAGES (NO BUBBLE, NO AVATAR)
+                    const rawHtml = marked.parse(message);
+                    
+                    let sourcesHtml = '';
+                    if (sources.length > 0) {
+                        sourcesHtml = '<div class="mt-4 border-t border-gray-700 pt-3 text-sm">';
+                        sourcesHtml += '<h4 class="font-semibold text-gray-400 mb-2">Sources:</h4><ol class="list-decimal list-inside space-y-1">';
+                        sources.forEach(source => {
+                            sourcesHtml += `
+                                <li class="truncate">
+                                    <a href="${source.uri}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline">
+                                        ${escapeHTML(source.title || source.uri)}
+                                    </a>
+                                </li>`;
+                        });
+                        sourcesHtml += '</ol></div>';
+                    }
+
+                    messageHtml = `
+                        <!-- Full width row -->
+                        <div id="${messageId}" class="w-full py-4 animate-fade-in">
+                            <!-- Centered container -->
+                            <div class="w-full max-w-4xl mx-auto flex justify-start px-4">
+                                <!-- Content (NO BUBBLE) -->
+                                <div class="max-w-2xl w-full">
+                                    <div class="prose prose-invert max-w-none">${rawHtml}</div>
+                                    ${sourcesHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                chatHistoryEl.insertAdjacentHTML('beforeend', messageHtml);
+                
+                if (sender === 'model') {
+                    addCodeBlockEnhancements(document.getElementById(messageId));
+                }
+
+                scrollToBottom();
+            }
+            
+            function addCodeBlockEnhancements(container = document) {
+                const codeBlocks = container.querySelectorAll('pre');
+                codeBlocks.forEach(pre => {
+                    const code = pre.querySelector('code');
+                    if (!code) return;
+
+                    const langClass = Array.from(code.classList).find(c => c.startsWith('language-'));
+                    const language = langClass ? langClass.replace('language-', '') : 'code';
+
+                    const codeContent = code.innerText;
+                    
+                    pre.innerHTML = '';
+                    
+                    const header = document.createElement('div');
+                    header.className = 'code-header';
+                    
+                    const langSpan = document.createElement('span');
+                    langSpan.className = 'code-language';
+                    langSpan.textContent = language;
+                    
+                    const copyButton = document.createElement('button');
+                    copyButton.className = 'copy-btn';
+                    copyButton.innerHTML = `
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        <span>Copy</span>
+                    `;
+                    
+                    header.appendChild(langSpan);
+                    header.appendChild(copyButton);
+
+                    const contentWrapper = document.createElement('div');
+                    contentWrapper.className = 'code-content';
+                    code.textContent = codeContent;
+                    contentWrapper.appendChild(code);
+                    
+                    pre.appendChild(header);
+                    pre.appendChild(contentWrapper);
+
+                    copyButton.addEventListener('click', () => {
+                        try {
+                            navigator.clipboard.writeText(codeContent).then(() => {
+                                copyButton.innerHTML = `
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <span>Copied!</span>`;
+                                setTimeout(() => {
+                                    copyButton.innerHTML = `
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        <span>Copy</span>`;
+                                }, 2000);
+                            }).catch(() => fallbackCopy(codeContent, copyButton)); // Fallback for iFrame
+                        } catch (err) {
+                            fallbackCopy(codeContent, copyButton); // Fallback for old browser
+                        }
+                    });
+                });
+            }
+            
+            function fallbackCopy(text, button) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed"; textArea.style.top = "0"; textArea.style.left = "0";
+                document.body.appendChild(textArea);
+                textArea.focus(); textArea.select();
+                try {
+                    document.execCommand('copy');
+                    button.innerHTML = `
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span>Copied!</span>`;
+                    setTimeout(() => {
+                        button.innerHTML = `
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            <span>Copy</span>`;
+                    }, 2000);
+                } catch (err) {
+                    console.error('Fallback copy failed', err);
+                    button.innerHTML = `<span>Failed</span>`;
+                }
+                document.body.removeChild(textArea);
+            }
+
+            function showLoading() {
+                isLoading = true;
+                const loadingHtml = `
+                    <div id="loading-indicator" class="w-full py-4 animate-fade-in">
+                        <div class="w-full max-w-4xl mx-auto flex justify-start px-4">
+                            <div class="max-w-2xl w-full">
+                                <div class="loading-dots">
+                                    <span></span><span></span><span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                chatHistoryEl.insertAdjacentHTML('beforeend', loadingHtml);
+                scrollToBottom();
+            }
+
+            function hideLoading() {
+                isLoading = false;
+                const loadingEl = document.getElementById('loading-indicator');
+                if (loadingEl) {
+                    loadingEl.remove();
+                }
+            }
+
+            function scrollToBottom() {
+                chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+            }
+
+            function escapeHTML(str) {
+                return str.replace(/[&<>"']/g, m => ({'&': '&amp;','<': '&lt;','>': '&gt;','"': '&quot;',"'": '&#039;'})[m]);
+            }
+
+            function setDeepSearch(isActive) {
+                isDeepSearchActive = isActive;
+                deepSearchToggle.checked = isActive;
+                deepSearchIndicator.style.display = isActive ? 'inline' : 'none';
+            }
+            
+            async function fetchWithBackoff(payload, maxRetries = 5) {
+                let delay = 1000;
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (response.ok) return await response.json();
+                        if (response.status >= 400 && response.status < 500) {
+                            const errorResult = await response.json();
+                            return { error: `API Error: ${errorResult.error.message}` };
+                        }
+                    } catch (error) { /* Network error, will retry */ }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+                return { error: 'Failed to get a response from the AI after multiple attempts.' };
+            }
+
+            async function handleSendPrompt() {
+                const prompt = promptInputEl.value.trim();
+                if (!prompt || isLoading) return;
+                
+                welcomeScreen.classList.add('hidden');
+                deepSearchControls.classList.remove('hidden');
+                deepSearchControls.classList.add('flex');
+
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                displayMessage('user', prompt);
+
+                promptInputEl.value = '';
+                autoResizeTextarea();
+                updateSendButtonState();
+                showLoading();
+
+                const payload = {
+                    contents: chatHistory,
+                    systemInstruction: systemInstruction,
+                    tools: []
+                };
+
+                if (isDeepSearchActive) {
+                    payload.tools.push({ "google_search": {} });
+                }
+
+                const result = await fetchWithBackoff(payload);
+                hideLoading();
+                setDeepSearch(false);
+
+                if (result.error) {
+                    displayMessage('model', `Error: ${result.error}`);
+                    return;
+                }
+
+                const candidate = result.candidates?.[0];
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const botText = candidate.content.parts[0].text;
+                    let sources = [];
+                    
+                    const groundingMetadata = candidate.groundingMetadata;
+                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                        sources = groundingMetadata.groundingAttributions
+                            .map(attr => attr.web)
+                            .filter(web => web?.uri && web?.title)
+                            .map(web => ({ uri: web.uri, title: web.title }));
+                        
+                        const uniqueSources = new Map();
+                        sources.forEach(s => uniqueSources.set(s.uri, s));
+                        sources = Array.from(uniqueSources.values());
+                    }
+
+                    chatHistory.push({ role: "model", parts: [{ text: botText }] });
+                    displayMessage('model', botText, sources);
+
+                } else {
+                    console.error('Invalid response structure:', result);
+                    displayMessage('model', 'I received an unexpected response. Please try again.');
+                }
+            }
+
+            // --- Event Listeners ---
+
+            sendButton.addEventListener('click', handleSendPrompt);
+            promptInputEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendPrompt();
+                }
+            });
+            promptInputEl.addEventListener('input', () => {
+                autoResizeTextarea();
+                updateSendButtonState();
+            });
+
+            // Suggestion cards
+            welcomeScreen.addEventListener('click', (e) => {
+                const card = e.target.closest('.suggestion-card');
+                if (!card) return;
+                
+                const promptText = card.dataset.prompt;
+                if (promptText.toLowerCase().includes('deep search')) {
+                    setDeepSearch(true);
+                } else {
+                    setDeepSearch(false);
+                }
+                
+                promptInputEl.value = promptText;
+                autoResizeTextarea();
+                updateSendButtonState();
+                handleSendPrompt();
+            });
+            
+            // Deep Search Toggle
+            deepSearchToggle.addEventListener('change', () => {
+                setDeepSearch(deepSearchToggle.checked);
+            });
+            setDeepSearch(false);
+
+            // Add custom animation class
+            const styleSheet = document.createElement("style");
+            styleSheet.type = "text/css";
+            styleSheet.innerText = `
+                @keyframes fade-in {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in {
+                    animation: fade-in 0.3s ease-out;
+                }
+            `;
+            document.head.appendChild(styleSheet);
+        });
+    </script>
+</body>
+</html>
