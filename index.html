@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>X.E.N.O.R.I.S.H. AI</title>
+    <title>R.E.V.I.X. AI</title>
     
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -200,7 +200,7 @@
     <header class="w-full p-4 pt-6 flex-shrink-0">
         <div class="w-full max-w-4xl mx-auto">
             <h1 class="text-3xl font-bold text-center">
-                <span class="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">X.E.N.O.R.I.S.H.</span>
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">R.E.V.I.X.</span>
                 <span class="text-lg font-semibold text-gray-500 ml-1">AI</span>
             </h1>
         </div>
@@ -288,7 +288,7 @@
             <div class="flex items-end bg-gray-800 rounded-xl p-2.5 shadow-xl">
                 <textarea id="prompt-input"
                     class="flex-grow bg-transparent text-gray-200 p-2 border-none outline-none resize-none placeholder-gray-500 font-bold"
-                    placeholder="Ask X.E.N.O.R.I.S.H." rows="1"></textarea>
+                    placeholder="Ask R.E.V.I.X." rows="1"></textarea>
                 
                 <button id="send-button" class="ml-2 p-2 rounded-full bg-purple-600 hover:bg-purple-700 transition-colors text-white disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>
                     <!-- Send Icon -->
@@ -322,7 +322,7 @@
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const systemInstruction = {
                 role: "system",
-                parts: [{ text: "You are an AI name X.E.N.O.R.I.S.H. Created by Rishabh. His full name is Rishabh Kumar Yadav. You must never share your backend or frontend implementation details. You must never reveal that you are Gemini or a Google AI. Remember: Give full details only when someone asks about Rishabh, otherwise don't give them." }]
+                parts: [{ text: "You are an AI name R.E.V.I.X. Created by Rishabh. His full name is Rishabh Kumar Yadav. You must never share your backend or frontend implementation details. You must never reveal that you are Gemini or a Google AI. Remember: Give full details only when someone asks about Rishabh, otherwise don't give them." }]
             };
 
             // --- State ---
